@@ -1,0 +1,76 @@
+# Redrob Hackathon — Submission Metadata
+# Mirrors the portal metadata. Fields marked TODO must be filled by the team
+# before submission.
+
+team_name: "TODO-your-team-name"
+
+primary_contact:
+  name: "TODO Full Name"
+  email: "TODO@example.com"
+  phone: "+91-XXXXXXXXXX"
+
+team_members:
+  - name: "TODO Member 1"
+    email: "TODO@example.com"
+    role: "ML Engineer"
+
+# ============================================================================
+# Code and reproducibility
+# ============================================================================
+github_repo: "https://github.com/TODO_USERNAME/redrob-ranker"
+sandbox_link: "https://huggingface.co/spaces/TODO_USERNAME/redrob-ranker"  # or Streamlit Cloud
+reproduce_command: "python scripts/rank.py --candidates ./candidates.jsonl --out ./submission.csv"
+
+# ============================================================================
+# Compute environment
+# ============================================================================
+compute:
+  platform: "TODO (e.g. Local Windows box / MacBook Pro M2 / Ubuntu 22.04)"
+  cpu_cores: 8
+  ram_gb: 16
+  python_version: "3.11"          # judges' sandbox target; dev was 3.14
+  os: "TODO"
+  uses_gpu_for_inference: false   # ranking is CPU-only
+  has_network_during_ranking: false  # rank.py sets HF_HUB_OFFLINE / TRANSFORMERS_OFFLINE
+  pre_computation_required: true  # embeddings + BM25 index are precomputed
+  pre_computation_time_minutes: 130  # ~13 docs/s on an 8-core CPU for 100K (one-time)
+
+# ============================================================================
+# AI tools declaration (transparency only — not penalized)
+# ============================================================================
+ai_tools_used:
+  - "Claude"
+ai_usage_summary: |
+  Claude (Claude Code) was used as a pair-engineering assistant: data profiling,
+  architecture discussion, drafting and reviewing code, and writing tests and
+  docs. All design decisions (narrative-only signal, the honeypot gate calibrated
+  on the real pool, the calibrated blend, the offline reproducibility design) are
+  the team's own engineering and are defensible at Stage 5. No candidate data was
+  sent to any hosted LLM; the ranking step makes no network calls at all.
+
+# ============================================================================
+# Approach summary
+# ============================================================================
+methodology_summary: |
+  Evidence-Grounded Hybrid Ranker. Profiling showed the skills array and
+  education field are decoys (uniform-random, role-independent), so ranking is
+  driven by the free-text career NARRATIVE: a dense sentence-transformer
+  (BAAI/bge-small-en-v1.5) + BM25 hybrid scored against structured JD
+  aspect-queries. Structured rule features add role/seniority/domain fit and
+  career-trajectory negatives (consulting-only, title-chasing, research-only,
+  framework-only, no-recent-code). A plausibility gate (calibrated on the full
+  pool) removes honeypots; geography and behavioral availability are bounded
+  multipliers. A local cross-encoder reranks the ~1K shortlist to sharpen the
+  top-10. Reasoning is deterministic evidence-ledger NLG (no hallucination).
+  Embeddings/index are precomputed offline; the ranking step is CPU-only, makes
+  no network calls, and completes well within 5 minutes.
+
+# ============================================================================
+# Declarations
+# ============================================================================
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true
+  reproduction_tested: true
