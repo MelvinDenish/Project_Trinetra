@@ -20,6 +20,8 @@ DATA_DIR = REPO_ROOT / "data"
 EMB_PATH = ARTIFACTS_DIR / "narrative_emb.npy"          # float32, (N, d), L2-normalized
 EMB_IDS_PATH = ARTIFACTS_DIR / "candidate_ids.npy"      # (N,) str candidate_id, aligned to EMB_PATH
 EMB_META_PATH = ARTIFACTS_DIR / "emb_meta.json"         # {"model": ..., "dim": ...}
+BM25_TF_PATH = ARTIFACTS_DIR / "bm25_tf.npz"            # scipy CSR term-count matrix (N, V)
+BM25_META_PATH = ARTIFACTS_DIR / "bm25_meta.npz"        # numpy: idf, doc_len, avgdl, vocab_*
 
 # ---------------------------------------------------------------------------
 # Models (small, CPU-friendly; weights cached locally so ranking needs no network)
@@ -50,6 +52,10 @@ W_TRAJECTORY = 0.20
 # semantic = dense (primary) + sparse lexical (secondary)
 W_DENSE = 0.70
 W_SPARSE = 0.30
+
+# BM25 (sparse lexical) hyperparameters — Robertson/Sparck-Jones defaults.
+BM25_K1 = 1.5
+BM25_B = 0.75
 
 # cross-encoder blend on the shortlist
 W_FINAL_IN_RERANK = 0.60
