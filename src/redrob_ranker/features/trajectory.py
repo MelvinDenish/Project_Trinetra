@@ -16,7 +16,7 @@ import numpy as np
 
 from .. import config, jd_spec
 from ..io_utils import derived_experience_years
-from ..textmatch import combined_text, contains_any, count_hits, norm
+from ..textmatch import combined_text, contains_any, count_hits, norm, tokenset
 
 _CODE_SIGNALS = [
     "code", "coded", "built", "develop", "implement", "engineered", "python",
@@ -77,16 +77,17 @@ def trajectory_scores(cands: list[dict], texts: list[str] | None = None) -> tupl
     detail: list[dict] = []
     for i, c in enumerate(cands):
         text = texts[i] if texts is not None else combined_text(c)
+        toks = tokenset(text)
         years = derived_experience_years(c)
-        prod_hits = count_hits(text, jd_spec.PRODUCTION_SIGNALS)
+        prod_hits = count_hits(text, jd_spec.PRODUCTION_SIGNALS, toks)
         base = 0.4 + 0.6 * min(1.0, prod_hits / 3.0)
 
         consulting_only = _consulting_only(c)
-        research_only = contains_any(text, jd_spec.RESEARCH_ONLY_SIGNALS) and prod_hits == 0
+        research_only = contains_any(text, jd_spec.RESEARCH_ONLY_SIGNALS, toks) and prod_hits == 0
         framework_only = (
-            contains_any(text, jd_spec.FRAMEWORK_LLM_ONLY)
+            contains_any(text, jd_spec.FRAMEWORK_LLM_ONLY, toks)
             and years < 3.5
-            and not contains_any(text, jd_spec.PRELLM_ML_SIGNALS)
+            and not contains_any(text, jd_spec.PRELLM_ML_SIGNALS, toks)
         )
         title_chaser = _title_chaser(c)
         no_recent_code = _senior_no_recent_code(c, years)

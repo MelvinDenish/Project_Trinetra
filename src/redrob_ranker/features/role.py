@@ -20,7 +20,7 @@ import numpy as np
 
 from .. import jd_spec
 from ..io_utils import derived_experience_years
-from ..textmatch import combined_text, contains_any, count_hits, norm
+from ..textmatch import combined_text, contains_any, count_hits, norm, tokenset
 
 # NLP/IR subset that "rescues" a CV/speech/robotics profile.
 _NLP_IR = [
@@ -82,13 +82,14 @@ def role_scores(cands: list[dict], texts: list[str] | None = None) -> tuple[np.n
     detail: list[dict] = []
     for i, c in enumerate(cands):
         text = texts[i] if texts is not None else combined_text(c)
+        toks = tokenset(text)
         title, offtarget = _title_score(c)
-        domain_hits = count_hits(text, jd_spec.DOMAIN_POSITIVE)
+        domain_hits = count_hits(text, jd_spec.DOMAIN_POSITIVE, toks)
         domain = min(1.0, domain_hits / 4.0)
         years = derived_experience_years(c)
         exp = _exp_fit(years)
 
-        cv_only = contains_any(text, jd_spec.DOMAIN_CV_SPEECH_ROBOTICS) and not contains_any(text, _NLP_IR)
+        cv_only = contains_any(text, jd_spec.DOMAIN_CV_SPEECH_ROBOTICS, toks) and not contains_any(text, _NLP_IR, toks)
         score = 0.5 * title + 0.3 * domain + 0.2 * exp
         if cv_only:
             score *= 0.4

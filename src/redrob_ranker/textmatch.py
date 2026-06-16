@@ -38,21 +38,21 @@ def term_in(term: str, text: str, toks: set[str] | None = None) -> bool:
     return term in norm(text)
 
 
-def contains_any(text: str, terms) -> bool:
-    toks = tokenset(text)
+def contains_any(text: str, terms, toks: set[str] | None = None) -> bool:
+    toks = toks if toks is not None else tokenset(text)
     t = norm(text)
     return any(term in toks if _is_word_term(term) else term in t for term in terms)
 
 
-def count_hits(text: str, terms) -> int:
+def count_hits(text: str, terms, toks: set[str] | None = None) -> int:
     """Number of distinct lexicon terms that appear in `text`."""
-    toks = tokenset(text)
+    toks = toks if toks is not None else tokenset(text)
     t = norm(text)
     return sum(1 for term in terms if (term in toks if _is_word_term(term) else term in t))
 
 
-def matched_terms(text: str, terms) -> list[str]:
-    toks = tokenset(text)
+def matched_terms(text: str, terms, toks: set[str] | None = None) -> list[str]:
+    toks = toks if toks is not None else tokenset(text)
     t = norm(text)
     return [term for term in terms if (term in toks if _is_word_term(term) else term in t)]
 
