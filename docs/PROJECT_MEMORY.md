@@ -145,3 +145,39 @@ select 1–2 strongest positives + the worst concern → realize with a lead/con
 chosen by a stable hash for cross-row variation, tone scaled by rank tier. A CI
 test (`faithfulness_violations`) asserts every emitted token exists in the record.
 The local LLM is kept strictly as a demo-only `--polish` flag, never in the CSV.
+
+---
+
+## Measured results (full 100,000-candidate run)
+
+Embedding model: `BAAI/bge-small-en-v1.5`; cross-encoder: `ms-marco-MiniLM-L-6-v2`.
+Frozen weights as in `config.py`. Reproduce with `scripts/rank.py` + `scripts/evaluate.py`.
+
+- **Runtime (ranking step):** ~190–210 s wall-clock on an 8-core CPU for all 100K
+  → comfortably inside the 5-minute budget. (Offline precompute was a one-time
+  ~14,000 s / ~4 h on this box, dominated by slow CPU encoding.)
+- **Validator:** `python validate_submission.py submission.csv` → "Submission is valid."
+- **Determinism:** two independent runs produced **byte-identical** CSVs (same SHA-256).
+- **Honeypot rate in top-100: 0** (DQ threshold is >10). **Stuffers in top-100: 0.**
+- **Top-10:** 10/10 India, 10/10 non-off-target titles.
+- **Ablation (top-100 composition):**
+  | ranking | honeypots | keyword-stuffers |
+  |---|---|---|
+  | skills-only (the decoy) | 0 | **37** |
+  | narrative-only | 0 | 0 |
+  | full pipeline | 0 | **0** |
+  Skills-only drags 37 keyword-stuffers into the top-100; the narrative-driven
+  full pipeline admits none — the core thesis, confirmed on the real data.
+- **Cross-encoder lift (anchor final-rank → reranked-rank):** CAND_0039754
+  #106→#38, CAND_0081846 #38→#9, CAND_0075249 #58→#15 — the rerank measurably
+  sharpens the top, exactly where NDCG@10 (50% of the score) is decided.
+- **Anchors vs negatives:** strong positives land #5/#9/#15/#38/#49 (5 of 6 inside
+  top-50; the 6th, a more generic recsys persona, sits just outside the top-100 in
+  a densely-packed elite cluster). Every geo/availability negative is buried far
+  below — non-India anchors at #29.8K / #56.2K / #65.9K / #59.5K, the unavailable
+  anchor at #1014. The Go/No-Go gate (anchors ≫ negatives, honeypot rate 0) passes.
+- **Saturation note (honest):** robust-min-max maps the top ~1% of dense scores to
+  1.0, so among the elite cluster the heuristic `final` is largely decided by the
+  bounded behavioral/geo modifiers; the cross-encoder is what provides genuine
+  top-100 discrimination. We did NOT hand-tune past this point — without ground
+  truth, further weight-fiddling risks overfitting intuition (a stated plan risk).
