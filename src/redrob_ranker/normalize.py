@@ -43,6 +43,7 @@ def rank01(x: np.ndarray) -> np.ndarray:
     if n <= 1:
         return np.zeros(n, dtype=np.float32)
     _, inv, counts = np.unique(x, return_inverse=True, return_counts=True)
+    inv = np.asarray(inv).reshape(-1)  # numpy 2.0 briefly returned (n,1); normalize shape
     cum = np.cumsum(counts)
     start = cum - counts
     avg = (start + cum - 1) / 2.0

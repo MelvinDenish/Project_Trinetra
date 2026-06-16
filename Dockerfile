@@ -9,7 +9,7 @@ WORKDIR /app
 # CPU-only torch first (keeps the image small and avoids CUDA wheels), then the
 # rest of the pinned deps.
 COPY requirements.txt .
-RUN pip install --no-cache-dir torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu \
+RUN pip install --no-cache-dir torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir -r requirements.txt
 
 # Pre-download model weights into the image cache (the only networked step).

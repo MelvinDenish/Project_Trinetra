@@ -1,12 +1,16 @@
-# Pinned for the submission/judge environment (Python 3.11 / 3.12, Linux, CPU-only).
-# Dev machine used newer wheels on Python 3.14; these pins are what Stage-3 Docker reproduces.
-numpy==1.26.4
-pandas==2.2.2
-scipy==1.13.1
-scikit-learn==1.5.1
-torch==2.3.1
-sentence-transformers==3.0.1
-transformers==4.42.4
-pyyaml==6.0.2
+# EXACT versions used to produce and validate the submitted CSV (shipping what we
+# actually ran, not untested guesses). Verified on Python 3.14 (Windows, dev); the
+# Dockerfile reproduces on Python 3.11 (Linux) — these versions all have py3.11
+# Linux wheels. Install CPU torch from the PyTorch CPU index (see Dockerfile/README):
+#   pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements.txt
+numpy==2.4.2
+pandas==2.3.3
+scipy==1.17.0
+scikit-learn==1.8.0
+torch==2.10.0
+sentence-transformers==5.2.3
+transformers==5.5.0
+pyyaml==6.0.3
 # Demo only (not needed for the ranking step):
-streamlit==1.37.1
+streamlit==1.58.0

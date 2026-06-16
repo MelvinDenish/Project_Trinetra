@@ -113,10 +113,16 @@ docs/              PROJECT_MEMORY.md, DECK_OUTLINE.md
 ```
 
 ## Compute & reproducibility
-- Ranking step: CPU-only, no GPU, **no network**, < 5 min, < 16 GB — by design.
-- Determinism: identical input → byte-identical CSV (no LLM in the scored path).
-- Pinned `requirements.txt`; `Dockerfile` targets Python 3.11/Linux to match the
-  judges' sandbox; numpy brute-force similarity (no faiss) keeps deps light.
+- Ranking step: CPU-only, no GPU, **no network**, < 5 min (~3.5 min measured on
+  100K), < 16 GB — verified by running `rank.py` with `HF_HUB_OFFLINE=1`.
+- Determinism: identical input → **byte-identical CSV on a given environment**
+  (verified: two runs, same SHA-256). No LLM in the scored path. Across a
+  different OS/Python the *ordering* is stable but exact float bytes may differ.
+- `requirements.txt` pins the **exact versions used to produce the validated CSV**
+  (numpy 2.x etc.), verified on Python 3.14; the `Dockerfile` targets Python 3.11/
+  Linux with the same pins (CPU torch). The Docker image build itself has not been
+  run in this environment — reconcile/rebuild before relying on it. numpy
+  brute-force similarity (no faiss) keeps deps light.
 - Models: `BAAI/bge-small-en-v1.5` (dense), `cross-encoder/ms-marco-MiniLM-L-6-v2`
   (rerank) — both small and CPU-friendly; weights cached locally so ranking needs
   no network.
