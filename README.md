@@ -1,3 +1,14 @@
+---
+title: Redrob Evidence-Grounded Ranker
+emoji: 🎯
+colorFrom: blue
+colorTo: indigo
+sdk: streamlit
+app_file: app/streamlit_app.py
+pinned: false
+short_description: Evidence-grounded hybrid candidate ranker
+---
+
 # Redrob — Evidence-Grounded Hybrid Ranker
 
 Top-100 candidate ranking for the Redrob **Intelligent Candidate Discovery &

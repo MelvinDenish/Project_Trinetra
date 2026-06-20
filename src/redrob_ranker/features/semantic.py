@@ -15,7 +15,22 @@ import numpy as np
 from scipy import sparse
 
 from .. import config
-from ..normalize import robust_minmax01
+from ..normalize import rank01, robust_minmax01
+
+
+def _shape01(x: np.ndarray) -> np.ndarray:
+    """Squash a raw aggregate into [0,1] while preserving intra-elite ordering.
+
+    Robust-min-max alone clips the top ~1% to 1.0 (elite-cluster collapse, which
+    erases ordering BEFORE the shortlist the cross-encoder reranks). We raise the
+    clip ceiling and mix in a small rank01 term so the elite stays separated
+    (PLAN_REVIEW_V2 Round 14). SEMANTIC_RANK_MIX=0 recovers the old behavior.
+    """
+    rm = robust_minmax01(x, hi_pct=config.ROBUST_HI_PCT)
+    mix = config.SEMANTIC_RANK_MIX
+    if mix <= 0.0:
+        return rm
+    return ((1.0 - mix) * rm + mix * rank01(x)).astype(np.float32)
 
 # Tokens: alphabetic-led, keep tech tokens like c++, ml-ops, gpt-4 reasonably intact.
 _TOKEN_PATTERN = r"(?u)\b[a-zA-Z][a-zA-Z0-9+#.\-]+\b"
@@ -159,8 +174,8 @@ def semantic_scores(
 
     dense_agg = _aggregate(dense, w)
     sparse_agg = _aggregate(sparse_mat, w)
-    d = robust_minmax01(dense_agg)
-    s = robust_minmax01(sparse_agg)
+    d = _shape01(dense_agg)
+    s = _shape01(sparse_agg)
     s_semantic = (config.W_DENSE * d + config.W_SPARSE * s).astype(np.float32)
     detail = {"dense": dense, "sparse": sparse_mat, "dense01": d, "sparse01": s}
     return s_semantic, detail

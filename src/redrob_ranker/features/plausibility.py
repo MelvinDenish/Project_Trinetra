@@ -49,15 +49,39 @@ def _duration_date_inconsistency(c: dict, ref=config.REFERENCE_DATE) -> bool:
     return False
 
 
+def _role_over_career_timeline(c: dict, ref=config.REFERENCE_DATE) -> bool:
+    """A single role claiming more months than the candidate's ENTIRE timeline.
+
+    The candidate's whole working timeline is bounded by (earliest career start
+    -> reference date). Any single role whose claimed duration_months exceeds
+    that whole-life span (by a generous margin) is a hard impossibility — the
+    "8 years at a company founded 3 years ago" class — and is distinct from the
+    per-role start/end check above. The margin keeps it to unambiguous cases so
+    no genuine candidate is caught (validated on the full pool).
+    """
+    starts = [parse_date(j.get("start_date")) for j in c.get("career_history", [])]
+    starts = [d for d in starts if d]
+    if not starts:
+        return False
+    timeline = months_between(min(starts), ref)
+    return any(
+        (j.get("duration_months") or 0) > timeline + config.ROLE_OVER_CAREER_MONTHS
+        for j in c.get("career_history", [])
+    )
+
+
 def assess(c: dict, ref=config.REFERENCE_DATE) -> dict:
     """Per-candidate plausibility assessment with human-readable reasons."""
     e0 = _expert_zero_duration_count(c)
     inconsistent = _duration_date_inconsistency(c, ref)
+    over_timeline = _role_over_career_timeline(c, ref)
     reasons: list[str] = []
     if e0 >= config.EXPERT_ZERO_DURATION_HARD:
         reasons.append(f"{e0} skills marked expert/advanced with 0 months of actual use")
     if inconsistent:
         reasons.append("a role claims more tenure than its own start/end dates allow")
+    if over_timeline:
+        reasons.append("a single role is longer than the candidate's entire career timeline")
 
     is_honeypot = bool(reasons)
     if is_honeypot:

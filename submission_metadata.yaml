@@ -5,31 +5,31 @@
 team_name: "TODO-your-team-name"
 
 primary_contact:
-  name: "TODO Full Name"
-  email: "TODO@example.com"
-  phone: "+91-XXXXXXXXXX"
+  name: "L.Melvin Denish"
+  email: "lmelvindenish@gmail.com"
+  phone: "+91-9789225286"
 
 team_members:
-  - name: "TODO Member 1"
-    email: "TODO@example.com"
+  - name: "L.Melvin Denish"
+    email: "lmelvindenish@gmail.com"
     role: "ML Engineer"
 
 # ============================================================================
 # Code and reproducibility
 # ============================================================================
-github_repo: "https://github.com/TODO_USERNAME/redrob-ranker"
-sandbox_link: "https://huggingface.co/spaces/TODO_USERNAME/redrob-ranker"  # or Streamlit Cloud
+github_repo: "https://github.com/MelvinDenish/Project_Trinetra"
+sandbox_link: "https://huggingface.co/spaces/Melvin1245/Project_Trinetra"  # TODO: confirm live URL after deploy
 reproduce_command: "python scripts/rank.py --candidates ./candidates.jsonl --out ./submission.csv"
 
 # ============================================================================
 # Compute environment
 # ============================================================================
 compute:
-  platform: "TODO (e.g. Local Windows box / MacBook Pro M2 / Ubuntu 22.04)"
+  platform: "Local Windows 11 laptop"
   cpu_cores: 8
   ram_gb: 16
   python_version: "3.11"          # judges' sandbox target; dev was 3.14
-  os: "TODO"
+  os: "Windows 11 (dev); reproduced via Docker on Ubuntu 22.04 / Python 3.11"
   uses_gpu_for_inference: false   # ranking is CPU-only
   has_network_during_ranking: false  # rank.py sets HF_HUB_OFFLINE / TRANSFORMERS_OFFLINE
   pre_computation_required: true  # embeddings + BM25 index are precomputed

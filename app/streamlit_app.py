@@ -37,8 +37,10 @@ with st.sidebar:
     top_k = st.slider("Show top K", 5, 100, 20)
     use_rerank = st.checkbox("Cross-encoder rerank", value=True)
     st.markdown(
-        "Upload a `candidates.jsonl` (≤100 rows) or use the bundled 200-row sample "
-        "(first N used). First run downloads the embedding model (~1 min)."
+        "Upload a `candidates.jsonl` — the demo ranks the **first ≤100 rows** "
+        "(it's a small-sample sandbox; the full pool runs via the batch pipeline "
+        "`scripts/rank.py`). Or use the bundled sample. First run downloads the "
+        "embedding model (~1 min)."
     )
 
 
@@ -48,19 +50,32 @@ def _load_sample(n: int = 100):
 
 
 uploaded = st.file_uploader("candidates .jsonl", type=["jsonl", "json"])
+use_sample = st.checkbox(
+    "Use bundled sample (100 candidates)",
+    value=False,
+    help="Tick this to try the demo on the bundled sample if you don't have your own file.",
+)
+
+cands = None
 if uploaded is not None:
+    # Stream just the first 100 rows. The demo is a small-sample sandbox, so we
+    # never materialize a large (~465 MB full-pool) file in memory.
     cands = []
-    for line in uploaded.getvalue().decode("utf-8").splitlines():
-        line = line.strip()
+    uploaded.seek(0)
+    for raw_line in uploaded:
+        line = raw_line.decode("utf-8").strip()
         if line:
             cands.append(json.loads(line))
-    cands = cands[:100]
-    st.success(f"Loaded {len(cands)} uploaded candidates (capped at 100).")
-else:
+        if len(cands) >= 100:
+            break
+    st.success(f"Loaded {len(cands)} candidates from your file (demo ranks the first 100).")
+elif use_sample:
     cands = _load_sample(100)
     st.info(f"Using the bundled sample ({len(cands)} candidates).")
+else:
+    st.warning("Upload a candidates.jsonl above, or tick “Use bundled sample” to try the demo.")
 
-if st.button("Rank candidates", type="primary"):
+if st.button("Rank candidates", type="primary", disabled=not cands):
     with st.spinner("Embedding + scoring on CPU…"):
         rows = pipeline.rank_in_memory(cands, top_k=top_k, use_rerank=use_rerank)
     df = pd.DataFrame(rows)[["rank", "candidate_id", "score", "reasoning"]]

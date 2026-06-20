@@ -61,6 +61,35 @@ def _top_report(name, order, ids, honeypot, india, stuffer, k=100):
     return hp
 
 
+def sensitivity_sweep(detail, id_to_i):
+    """Modifier-envelope sensitivity (PLAN_REVIEW_V2 Round 12).
+
+    Without ground truth we cannot *tune* the geo/behavioral magnitudes, but we
+    CAN prove the ranking is robust to them: re-derive the heuristic `final`
+    under several envelope scales (0 = modifiers off -> 1.5 = widened) and report
+    where the hand-verified strong positives / negatives land. Stable ordering
+    across settings is the validatable property (and a strong Stage-5 line).
+    """
+    base = detail["base"]
+    p, g, b = detail["p_plaus"], detail["f_geo"], detail["f_beh"]
+    anchors = [a for a in STRONG_POSITIVES if a in id_to_i]
+    negs = [a for a in GEO_AVAIL_NEGATIVES if a in id_to_i]
+    print("\n=== MODIFIER SENSITIVITY SWEEP ===  (heuristic-final rank under scaled envelopes)")
+    print(f"  {'scale':<7}" + "".join(f"{a[-4:]:>6}" for a in anchors)
+          + "  |" + "".join(f"{n[-4:]:>7}" for n in negs))
+    for scale in (0.0, 0.5, 1.0, 1.5):
+        # Compress/expand each multiplier around 1.0 by `scale` (1.0 == shipped).
+        g_s = 1.0 + (g - 1.0) * scale
+        b_s = 1.0 + (b - 1.0) * scale
+        final_s = (base * p * g_s * b_s).astype(np.float64)
+        order = np.argsort(-final_s, kind="stable")
+        rank_of = {int(idx): r + 1 for r, idx in enumerate(order)}
+        pos = "".join(f"{rank_of[id_to_i[a]]:>6}" for a in anchors)
+        neg = "".join(f"{rank_of[id_to_i[n]]:>7}" for n in negs)
+        tag = " (shipped)" if scale == 1.0 else ""
+        print(f"  {scale:<7}{pos}  |{neg}{tag}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--candidates", required=True)
@@ -82,6 +111,8 @@ def main():
     full_order = np.argsort(-final, kind="stable")
     narr_order = np.argsort(-s_sem, kind="stable")
     skills_order = np.argsort(-ai_skills, kind="stable")
+
+    sensitivity_sweep(detail, id_to_i)
 
     print("\n=== ABLATION (top-100 composition) ===")
     _top_report("skills-only", skills_order, ids, honeypot, india, stuffer)

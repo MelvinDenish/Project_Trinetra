@@ -55,3 +55,17 @@ def test_two_expert_zero_is_soft_not_honeypot():
     a = assess(_candidate(skills=skills))
     assert a["is_honeypot"] is False
     assert a["factor"] == config.PLAUSIBILITY_SOFT
+
+
+def test_role_longer_than_entire_timeline_is_honeypot():
+    # A role with a FUTURE end_date whose duration fills that future span is
+    # consistent with its own dates (so the per-role check misses it) but claims
+    # more months than the candidate has been working (earliest start -> today).
+    career = [{
+        "company": "FutureCorp", "title": "Engineer", "start_date": "2020-01-01",
+        "end_date": "2031-01-01", "duration_months": 132, "is_current": False,
+        "industry": "Software", "description": "built systems",
+    }]
+    a = assess(_candidate(career=career))
+    assert a["is_honeypot"] is True
+    assert any("entire career timeline" in r for r in a["reasons"])

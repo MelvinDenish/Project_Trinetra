@@ -85,6 +85,9 @@ def _score_all(cands, emb, bm25, log=None):
     detail = {
         "s_semantic": s_sem, "s_role": s_role, "s_trajectory": s_traj,
         "base": base, "final": final,
+        # raw multiplier arrays kept so evaluate.py can run modifier sensitivity
+        # sweeps without recomputing the (expensive) sub-scores.
+        "p_plaus": p_plaus, "f_geo": f_geo, "f_beh": f_beh,
         "role": role_detail, "trajectory": traj_detail, "plausibility": plaus_detail,
         "geo": geo_detail, "behavioral": beh_detail, "semantic": sem_detail,
     }
@@ -102,12 +105,33 @@ def _rerank_shortlist(cands, final, use_rerank, log=None):
 
     try:
         from . import rerank as rr
-        narratives = [build_narrative(cands[i]) for i in shortlist]
-        cross = rr.cross_encoder_scores(narratives)
-        blended = scoring.blend_rerank(final[shortlist], cross)
-        _log(f"cross-encoder reranked {k} shortlisted", log)
-        return shortlist, blended
-    except Exception as e:  # graceful degradation — model missing/offline failure
+        model, ce_name = rr.load_cross_encoder()
+        # Only the top RERANK_SHORTLIST_K get the (expensive) cross-encoder; the rest
+        # of the recall shortlist keep heuristic order strictly below the reranked
+        # block. This lets a heavy reranker stay in budget (it MUST: bge-reranker-base
+        # over the full 1000 measured ~25 min here) while still covering the top-100.
+        rk = min(config.RERANK_SHORTLIST_K, k)
+        rerank_idx = shortlist[:rk]
+        narratives = [build_narrative(cands[i]) for i in rerank_idx]
+        cross = rr.cross_encoder_scores(narratives, model=model)
+        # Trust a STRONG reranker enough to lead the top-K ordering; the weak MiniLM
+        # fallback stays subordinate to the heuristic (PLAN_REVIEW_V2 Round 5).
+        is_strong = ce_name != config.CROSS_ENCODER_FALLBACK
+        if is_strong:
+            w_final, w_cross = config.W_FINAL_IN_RERANK, config.W_CROSS_IN_RERANK
+            kind = "authoritative"
+        else:
+            w_final, w_cross = config.W_FINAL_IN_RERANK_FALLBACK, config.W_CROSS_IN_RERANK_FALLBACK
+            kind = "conservative"
+        blended = scoring.blend_rerank(final[rerank_idx], cross, w_final, w_cross)  # [0,1]
+        _log(f"reranked {rk}/{k} with {ce_name} ({kind} blend {w_final}/{w_cross})", log)
+
+        score = np.empty(k, dtype=np.float32)
+        score[:rk] = blended
+        if rk < k:  # un-reranked tail sits below the reranked block, heuristic order
+            score[rk:] = (-1.0 + rank01(final[shortlist[rk:]])).astype(np.float32)
+        return shortlist, score
+    except Exception as e:  # graceful degradation — no model available at all
         _log(f"rerank skipped ({type(e).__name__}: {e}); using heuristic final", log)
         return shortlist, rank01(final[shortlist])
 

@@ -33,15 +33,22 @@ def final_score(
     return (base * plausibility * geo * behavioral).astype(np.float32)
 
 
-def blend_rerank(final_shortlist: np.ndarray, cross_shortlist: np.ndarray) -> np.ndarray:
+def blend_rerank(
+    final_shortlist: np.ndarray,
+    cross_shortlist: np.ndarray,
+    w_final: float = config.W_FINAL_IN_RERANK,
+    w_cross: float = config.W_CROSS_IN_RERANK,
+) -> np.ndarray:
     """Blend heuristic `final` with the cross-encoder on the shortlist.
 
     Both are mapped to normalized ranks first so the cross-encoder's logit scale
-    (which is unbounded) can't swamp the bounded heuristic score.
+    (which is unbounded) can't swamp the bounded heuristic score. The weights are
+    supplied by the caller so a *strong* reranker can be made authoritative for
+    the top-K while a *fallback* reranker stays subordinate (PLAN_REVIEW_V2 R5).
     """
     f = rank01(final_shortlist)
     c = rank01(cross_shortlist)
-    return (config.W_FINAL_IN_RERANK * f + config.W_CROSS_IN_RERANK * c).astype(np.float32)
+    return (w_final * f + w_cross * c).astype(np.float32)
 
 
 def select_top_k(

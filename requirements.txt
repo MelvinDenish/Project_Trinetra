@@ -4,6 +4,10 @@
 # Linux wheels. Install CPU torch from the PyTorch CPU index (see Dockerfile/README):
 #   pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
 #   pip install -r requirements.txt
+# On Hugging Face Spaces (Streamlit SDK) there is no separate torch step, so this
+# extra index makes `torch==2.10.0` resolve to the CPU wheel instead of the
+# multi-GB CUDA build (which can break the Space build):
+--extra-index-url https://download.pytorch.org/whl/cpu
 numpy==2.4.2
 pandas==2.3.3
 scipy==1.17.0

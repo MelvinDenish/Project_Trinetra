@@ -1,0 +1,7 @@
+# Streamlit config for the Hugging Face sandbox demo.
+# Streamlit's default upload cap is 200 MB; the challenge candidates file is
+# ~465 MB, so raise the ceiling. NOTE: the demo still ranks only the first 100
+# rows of whatever is uploaded (see app/streamlit_app.py) — the full pool is
+# handled by the batch pipeline (scripts/rank.py), not this in-browser sandbox.
+[server]
+maxUploadSize = 600
