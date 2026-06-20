@@ -13,6 +13,12 @@ team_members:
   - name: "L.Melvin Denish"
     email: "lmelvindenish@gmail.com"
     role: "ML Engineer"
+  - name: "Mohammed Muksith"
+    email: "mdmuksith001.studies@gmail.com"
+    role: "Data Engineer"
+  - name: "Nimithashree A"
+    email: "nimithashreea@gmail.com"
+    role: "Frontend Developer"
 
 # ============================================================================
 # Code and reproducibility
